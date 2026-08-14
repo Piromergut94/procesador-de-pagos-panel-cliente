@@ -1,6 +1,6 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from "jsr:@supabase/supabase-js@2";
 console.info("get-customer-products function initialized");
 
 Deno.serve(async (req) => {
@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Debe enviar customer_id" });
     }
 
-   const supabaseClient = createClient(
+    const supabaseClient = createClient(
       // URL y KEY provistas por Supabase Runtime
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -27,15 +27,21 @@ Deno.serve(async (req) => {
 
     const { data: customer, errorCustomer } = await supabaseClient
       .from("customers")
-      .select("*")
+      .select("id, name, national_id")
       .eq("id", customer_id)
       .single();
 
-    // Buscar productos del customer
+    if (errorCustomer) {
+      console.error("Supabase customer error:", errorCustomer);
+      return jsonResponse({ error: "Error al obtener cliente" });
+    }
+
+    // Buscar solo los productos activos y los campos usados por el frontend.
     const { data: customerProducts, error } = await supabaseClient
       .from("customer_products")
-      .select("*")
-      .eq("customer_id", customer_id);
+      .select("id, product_code")
+      .eq("customer_id", customer_id)
+      .is("deleted_at", null);
 
 
     if (error) {
@@ -43,31 +49,25 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Error al obtener productos" });
     }
 
-    if (!customerProducts || customerProducts.length === 0) {
-      return jsonResponse({ message: "No existen productos para este cliente" });
+    const { data: paymentMethod, error: paymentError } = await supabaseClient
+      .from("payment_methods")
+      .select("card_number, card_brand")
+      .eq("customer_id", customer_id)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (paymentError) {
+      console.error("Supabase payment method error:", paymentError);
+      return jsonResponse({ error: "Error al obtener medio de pago" });
     }
 
-    const { data: paymentMethod, error: paymentError } = await supabaseClient
-  .from("payment_methods")
-  .select("card_number, card_brand")
-  .eq("customer_id", customer_id)
-  .is("deleted_at", null)
-  .order("created_at", { ascending: false })
-  .limit(1)
-  .maybeSingle();
-
-  console.log(paymentMethod)
-
-  if (paymentError) {
-    console.log(paymentError)
-  return jsonResponse({ message: "Error en paymentError" });
-  }
-
-  const result = customerProducts.map((product) => ({
-  ...product,
-  payment_method: paymentMethod ?? null,
-}));
-
+    const result = (customerProducts ?? []).map((product) => ({
+      id: product.id,
+      product_code: product.product_code,
+      payment_method: paymentMethod ?? null,
+    }));
 
     return jsonResponse({ customer: customer, customer_products: result });
   } catch (e) {

@@ -331,6 +331,7 @@ function Dashboard() {
                 customerId={apiResponse?.customer?.id}  // ✅ ESTE ES EL BUENO
                 onRegisterPayment={handleRegisterPayment}
                 isLoading={registeringPayment}
+                isCustomerInfoLoading={loading}
               />
 
 

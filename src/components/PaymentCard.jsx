@@ -4,11 +4,13 @@ import './PaymentCard.css'
 function PaymentCard({
   onRegisterPayment,
   isLoading = false,
+  isCustomerInfoLoading = false,
   customerId,
   companyId = null
 }) {
   const [debts, setDebts] = useState([])
   const [loadingDebts, setLoadingDebts] = useState(false)
+  const [loadedDebtsCustomerId, setLoadedDebtsCustomerId] = useState(null)
 
   // ✅ MODAL
   const [selectedDebt, setSelectedDebt] = useState(null)
@@ -209,7 +211,11 @@ function PaymentCard({
   }
 
   useEffect(() => {
-    if (!customerId) return
+    if (!customerId) {
+      setDebts([])
+      setLoadedDebtsCustomerId(null)
+      return
+    }
 
     const fetchDebts = async () => {
       try {
@@ -240,6 +246,7 @@ function PaymentCard({
         console.error('❌ Error cargando deudas:', err)
         setDebts([])
       } finally {
+        setLoadedDebtsCustomerId(customerId)
         setLoadingDebts(false)
       }
     }
@@ -247,14 +254,17 @@ function PaymentCard({
     fetchDebts()
   }, [customerId, companyId])
 
-  // ✅ LOADING
-  if (loadingDebts) {
+  const isLoadingCustomerData =
+    isCustomerInfoLoading ||
+    (customerId && loadedDebtsCustomerId !== customerId)
+
+  if (isLoadingCustomerData || loadingDebts) {
     return (
       <div className="payment-card">
         <div className="payment-card-content">
           <div className="payment-card-text">
-            <h2 className="payment-card-title">Cargando cuotas...</h2>
-            <p className="payment-card-subtitle">El internet hace lo que puede.</p>
+            <h2 className="payment-card-title">Estamos cargando tu información</h2>
+            <p className="payment-card-subtitle">Esto puede tardar unos segundos.</p>
           </div>
         </div>
       </div>
