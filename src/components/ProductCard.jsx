@@ -128,9 +128,6 @@ function ProductCard({ productCode, productNumber, paymentMethod, hasWarning }) 
           </svg>
         </button> */}
       </div>
-      <div className="product-card-status">
-        No tiene deuda vencida
-      </div>
       <div className="product-card-payment">
         <div
           className={`payment-method-icon ${
