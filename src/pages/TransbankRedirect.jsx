@@ -8,13 +8,13 @@ function TransbankRedirect() {
   const location = useLocation()
   const navigate = useNavigate()
   const [countdown, setCountdown] = useState(3)
-  const { webpayUrl, token, customer_id } = location.state || {}
+  const { webpayUrl, token, customer_token } = location.state || {}
 
   useEffect(() => {
     if (!webpayUrl || !token) {
       // Si no hay datos, redirigir al dashboard
-      if (customer_id) {
-        navigate(`/dashboard/${customer_id}`)
+      if (customer_token) {
+        navigate(`/dashboard/${customer_token}`)
       } else {
         navigate('/')
       }
@@ -36,7 +36,7 @@ function TransbankRedirect() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [webpayUrl, token, customer_id, navigate])
+  }, [webpayUrl, token, customer_token, navigate])
 
   return (
     <div className="transbank-redirect">

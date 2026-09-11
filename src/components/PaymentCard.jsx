@@ -5,69 +5,17 @@ function PaymentCard({
   onRegisterPayment,
   isLoading = false,
   isCustomerInfoLoading = false,
-  customerId,
-  companyId = null
+  customerToken,
 }) {
   const [debts, setDebts] = useState([])
   const [loadingDebts, setLoadingDebts] = useState(false)
-  const [loadedDebtsCustomerId, setLoadedDebtsCustomerId] = useState(null)
+  const [loadedDebtsCustomerToken, setLoadedDebtsCustomerToken] = useState(null)
 
   // ✅ MODAL
   const [selectedDebt, setSelectedDebt] = useState(null)
 
   const [isPaying, setIsPaying] = useState(false)
   const [payError, setPayError] = useState(null)
-
-  const [resolvedCompanyId, setResolvedCompanyId] = useState(null)
-
-  useEffect(() => {
-    if (!customerId) return
-
-    // Si viene por props, listo.
-    if (companyId) {
-      setResolvedCompanyId(companyId)
-      return
-    }
-
-    const fetchCompanyIdFromDebts = async () => {
-      try {
-        // REST directo a tabla debts
-        const url =
-          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/debts` +
-          `?customer_id=eq.${encodeURIComponent(customerId)}` +
-          `&select=company_id` +
-          `&company_id=not.is.null` +
-          `&limit=1`
-
-        const res = await fetch(url, {
-          method: "GET",
-          headers: {
-            apikey: import.meta.env.VITE_SUPABASE_SERVICE_ANON_KEY,
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ANON_KEY}`,
-          },
-        })
-
-        const json = await res.json().catch(() => [])
-
-        if (!res.ok) {
-          console.error("❌ debts REST error:", json)
-          setResolvedCompanyId(null)
-          return
-        }
-
-        const cid =
-          Array.isArray(json) && json.length > 0 ? json[0]?.company_id : null
-
-        setResolvedCompanyId(cid ?? null)
-        console.log("✅ resolvedCompanyId:", cid)
-      } catch (e) {
-        console.error("❌ fetchCompanyIdFromDebts error:", e)
-        setResolvedCompanyId(null)
-      }
-    }
-
-    fetchCompanyIdFromDebts()
-  }, [customerId, companyId])
 
 
   const parseDateSafe = (dateStr) => {
@@ -139,11 +87,10 @@ function PaymentCard({
 
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webpay-integration`
 
-      const buy_order = `CUST-${customerId}-${Date.now()}`
-      const session_id = `SID-${customerId}-${Date.now()}`
+      const buy_order = `CUST-${Date.now()}`
+      const session_id = `SID-${Date.now()}`
 
-      // ✅ Da igual si Webpay no respeta querystring: guardamos el id en storage igual
-      const return_url = `${window.location.origin}/webpay/return?customer_id=${encodeURIComponent(customerId)}`
+      const return_url = `${window.location.origin}/webpay/return?customer_token=${encodeURIComponent(customerToken)}`
 
       const res = await fetch(url, {
         method: 'POST',
@@ -159,10 +106,8 @@ function PaymentCard({
           return_url,
 
           // Extra útil para tu backend
-          customer_id: customerId,
-          company_id: resolvedCompanyId,
+          customer_token: customerToken,
           debt_ids: overdueDebts.map((d) => d.id),
-          external_ids: overdueDebts.map((d) => d.external_id).filter(Boolean),
         }),
       })
 
@@ -183,11 +128,10 @@ function PaymentCard({
         return
       }
 
-      // ✅ Guardar customerId para recuperarlo en /webpay/return
+      // Guardar token público para recuperarlo en /webpay/return.
       // sessionStorage es por pestaña; localStorage es más robusto por si cambia contexto
-      sessionStorage.setItem('last_customer_id', String(customerId))
-      localStorage.setItem('last_customer_id', String(customerId))
-      console.log('Saved last_customer_id:', customerId)
+      sessionStorage.setItem('last_customer_token', String(customerToken))
+      localStorage.setItem('last_customer_token', String(customerToken))
 
       // ✅ Redirección correcta a Webpay: POST con token_ws (NO GET)
       const form = document.createElement('form')
@@ -211,9 +155,9 @@ function PaymentCard({
   }
 
   useEffect(() => {
-    if (!customerId) {
+    if (!customerToken) {
       setDebts([])
-      setLoadedDebtsCustomerId(null)
+      setLoadedDebtsCustomerToken(null)
       return
     }
 
@@ -230,7 +174,7 @@ function PaymentCard({
             apikey: import.meta.env.VITE_SUPABASE_SERVICE_ANON_KEY,
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ANON_KEY}`,
           },
-          body: JSON.stringify({ customer_id: customerId }),
+          body: JSON.stringify({ customer_token: customerToken }),
         })
 
         const json = await res.json()
@@ -246,17 +190,17 @@ function PaymentCard({
         console.error('❌ Error cargando deudas:', err)
         setDebts([])
       } finally {
-        setLoadedDebtsCustomerId(customerId)
+        setLoadedDebtsCustomerToken(customerToken)
         setLoadingDebts(false)
       }
     }
 
     fetchDebts()
-  }, [customerId, companyId])
+  }, [customerToken])
 
   const isLoadingCustomerData =
     isCustomerInfoLoading ||
-    (customerId && loadedDebtsCustomerId !== customerId)
+    (customerToken && loadedDebtsCustomerToken !== customerToken)
 
   if (isLoadingCustomerData || loadingDebts) {
     return (

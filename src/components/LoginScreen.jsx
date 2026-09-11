@@ -43,8 +43,8 @@ function LoginScreen() {
         return
       }
 
-      if (data.customer_id) {
-        navigate(`/dashboard/${data.customer_id}`)
+      if (data.customer_token) {
+        navigate(`/dashboard/${data.customer_token}`)
         return
       }
 

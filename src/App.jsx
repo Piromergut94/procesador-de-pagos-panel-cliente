@@ -13,9 +13,9 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LoginScreen />} />
-        <Route path="/dashboard/:customer_id" element={<Dashboard />} />
+        <Route path="/dashboard/:customer_token" element={<Dashboard />} />
         <Route
-          path="/payment-success/:customer_id"
+          path="/payment-success/:customer_token"
           element={<PaymentSuccess />}
         />
         <Route

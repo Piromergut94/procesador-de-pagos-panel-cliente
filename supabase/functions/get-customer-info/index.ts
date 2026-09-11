@@ -12,10 +12,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { customer_id } = await req.json();
+    const { customer_token } = await req.json();
 
-    if (!customer_id) {
-      return jsonResponse({ error: "Debe enviar customer_id" });
+    if (!customer_token) {
+      return jsonResponse({ error: "Debe enviar customer_token" });
     }
 
     const supabaseClient = createClient(
@@ -28,10 +28,10 @@ Deno.serve(async (req) => {
     const { data: customer, errorCustomer } = await supabaseClient
       .from("customers")
       .select("id, name, national_id")
-      .eq("id", customer_id)
+      .eq("portal_token", customer_token)
       .single();
 
-    if (errorCustomer) {
+    if (errorCustomer || !customer) {
       console.error("Supabase customer error:", errorCustomer);
       return jsonResponse({ error: "Error al obtener cliente" });
     }
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     const { data: customerProducts, error } = await supabaseClient
       .from("customer_products")
       .select("id, product_code")
-      .eq("customer_id", customer_id)
+      .eq("customer_id", customer.id)
       .is("deleted_at", null);
 
 
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     const { data: paymentMethod, error: paymentError } = await supabaseClient
       .from("payment_methods")
       .select("card_number, card_brand")
-      .eq("customer_id", customer_id)
+      .eq("customer_id", customer.id)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -69,7 +69,13 @@ Deno.serve(async (req) => {
       payment_method: paymentMethod ?? null,
     }));
 
-    return jsonResponse({ customer: customer, customer_products: result });
+    return jsonResponse({
+      customer: {
+        name: customer.name,
+        national_id: customer.national_id,
+      },
+      customer_products: result,
+    });
   } catch (e) {
     console.error("Server error:", e);
     return jsonResponse({ error: "Error interno" });

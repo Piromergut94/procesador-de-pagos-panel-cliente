@@ -24,7 +24,7 @@ const filterActiveCustomerProducts = (products) => {
 }
 
 function Dashboard() {
-  const { customer_id } = useParams()
+  const { customer_token } = useParams()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('cuotas')
   const [loading, setLoading] = useState(true)
@@ -32,21 +32,21 @@ function Dashboard() {
   const [customerProducts, setCustomerProducts] = useState([])
   const [userData, setUserData] = useState({
     name: '',
-    number: customer_id || '',
+    number: '',
   })
   const [apiResponse, setApiResponse] = useState(null)
   const [registeringPayment, setRegisteringPayment] = useState(false)
 
   useEffect(() => {
     const fetchCustomerInfo = async () => {
-      if (!customer_id) {
-        setError('Customer ID no proporcionado')
+      if (!customer_token) {
+        setError('Token de cliente no proporcionado')
         setLoading(false)
         return
       }
 
       // Intentar cargar desde localStorage primero
-      const storedData = getCustomerInfoFromStorage(customer_id)
+      const storedData = getCustomerInfoFromStorage(customer_token)
       if (storedData && storedData.data) {
         console.log('Datos cargados desde localStorage')
         const data = storedData.data
@@ -78,7 +78,7 @@ function Dashboard() {
           setUserData((prev) => ({
             ...prev,
             name: data.customer?.name || prev.name,
-            number: customerRut || customer_id,
+            number: customerRut || prev.number,
           }))
           setLoading(false)
 
@@ -103,24 +103,20 @@ function Dashboard() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            customer_id: customer_id,
+            customer_token: customer_token,
           }),
         })
 
         const data = await response.json()
 
-        // Debug: Ver estructura de datos para encontrar el RUT
-        console.log('API Response data:', data)
-        console.log('Customer object:', data.customer)
-
         // Guardar la respuesta completa en localStorage (incluso si hay error)
-        saveCustomerInfoToStorage(customer_id, data)
+        saveCustomerInfoToStorage(customer_token, data)
         setApiResponse(data)
 
         // Verificar si hay error en la respuesta
         if (data.error) {
           // Si hay error pero tenemos datos almacenados, usar esos
-          const storedData = getCustomerInfoFromStorage(customer_id)
+          const storedData = getCustomerInfoFromStorage(customer_token)
           if (storedData && storedData.data && !storedData.data.error) {
             console.log('Usando datos almacenados debido a error en API')
             const stored = storedData.data
@@ -145,7 +141,7 @@ function Dashboard() {
             setUserData((prev) => ({
               ...prev,
               name: stored.customer?.name || prev.name,
-              number: storedRut || customer_id,
+              number: storedRut || prev.number,
             }))
           } else {
             setError(data.error || 'Error al obtener información del cliente')
@@ -178,13 +174,13 @@ function Dashboard() {
         setUserData((prev) => ({
           ...prev,
           name: data.customer?.name || prev.name,
-          number: customerRut || customer_id,
+          number: customerRut || prev.number,
         }))
       } catch (err) {
         console.error('Error fetching customer info:', err)
 
         // Intentar usar datos almacenados si hay error de red
-        const storedData = getCustomerInfoFromStorage(customer_id)
+        const storedData = getCustomerInfoFromStorage(customer_token)
         if (storedData && storedData.data && !storedData.data.error) {
           console.log('Usando datos almacenados debido a error de red')
           const stored = storedData.data
@@ -212,7 +208,7 @@ function Dashboard() {
           setUserData((prev) => ({
             ...prev,
             name: stored.customer?.name || prev.name,
-            number: storedRut || customer_id,
+            number: storedRut || prev.number,
           }))
         } else {
           setError(err.message || 'Error al cargar la información del cliente')
@@ -224,11 +220,11 @@ function Dashboard() {
     }
 
     fetchCustomerInfo()
-  }, [customer_id])
+  }, [customer_token])
 
   const handleRegisterPayment = async () => {
-    if (!customer_id) {
-      console.error('Customer ID no disponible')
+    if (!customer_token) {
+      console.error('Customer token no disponible')
       return
     }
 
@@ -244,7 +240,7 @@ function Dashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          customer_id: customer_id,
+          customer_token: customer_token,
         }),
       })
 
@@ -262,7 +258,7 @@ function Dashboard() {
           state: {
             webpayUrl: url_webpay,
             token: token,
-            customer_id: customer_id,
+            customer_token: customer_token,
           },
         })
       } else {
@@ -314,11 +310,6 @@ function Dashboard() {
       </div>
     )
   }
-  const rutValido = userData.number && userData.number.includes("-")
-    ? userData.number
-    : null;
-
-
   return (
     <div className="dashboard">
       <Header userName={userData.name} userNumber={userData.number} />
@@ -328,7 +319,7 @@ function Dashboard() {
           {activeTab === 'cuotas' && (
             <>
               <PaymentCard
-                customerId={apiResponse?.customer?.id}  // ✅ ESTE ES EL BUENO
+                customerToken={customer_token}
                 onRegisterPayment={handleRegisterPayment}
                 isLoading={registeringPayment}
                 isCustomerInfoLoading={loading}

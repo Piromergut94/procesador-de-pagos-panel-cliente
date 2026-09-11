@@ -7,7 +7,7 @@ import './PaymentSuccess.css'
 const API_URL = 'https://ovukfntlauhftpwymvdr.supabase.co/functions/v1/finish-inscription-webpay'
 
 function PaymentSuccess() {
-  const { customer_id } = useParams()
+  const { customer_token } = useParams()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   
@@ -20,7 +20,7 @@ function PaymentSuccess() {
 
   useEffect(() => {
     const finishInscription = async () => {
-      if (!customer_id || !tbk_token) {
+      if (!customer_token || !tbk_token) {
         setError(true)
         setLoading(false)
         return
@@ -37,7 +37,7 @@ function PaymentSuccess() {
           },
           body: JSON.stringify({
             tbk_token: tbk_token,
-            customer_id: customer_id,
+            customer_token: customer_token,
           }),
         })
 
@@ -61,11 +61,11 @@ function PaymentSuccess() {
     }
 
     finishInscription()
-  }, [customer_id, tbk_token])
+  }, [customer_token, tbk_token])
 
   const handleBackToDashboard = () => {
-    if (customer_id) {
-      navigate(`/dashboard/${customer_id}`)
+    if (customer_token) {
+      navigate(`/dashboard/${customer_token}`)
     } else {
       navigate('/')
     }

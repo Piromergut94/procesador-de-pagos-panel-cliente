@@ -4,10 +4,10 @@ export default function WebpayReturn() {
   const params = useMemo(() => new URLSearchParams(window.location.search), [])
   const token = params.get("token_ws")
 
-  const customerId =
-    params.get("customer_id") ||
-    sessionStorage.getItem("last_customer_id") ||
-    localStorage.getItem("last_customer_id")
+  const customerToken =
+    params.get("customer_token") ||
+    sessionStorage.getItem("last_customer_token") ||
+    localStorage.getItem("last_customer_token")
 
   const [loading, setLoading] = useState(true)
   const [kind, setKind] = useState("info") // success | warn | error | info
@@ -15,17 +15,12 @@ export default function WebpayReturn() {
   const [message, setMessage] = useState("Validando la transacción.")
 
   const goBack = () => {
-    if (customerId) {
-      window.location.href = `/dashboard/${encodeURIComponent(customerId)}`
+    if (customerToken) {
+      window.location.href = `/dashboard/${encodeURIComponent(customerToken)}`
       return
     }
     window.location.href = "/"
   }
-
-  console.log("RETURN:", window.location.href)
-  console.log("stored last_customer_id(session):", sessionStorage.getItem("last_customer_id"))
-  console.log("stored last_customer_id(local):", localStorage.getItem("last_customer_id"))
-  console.log("customerId:", customerId)
 
   useEffect(() => {
     if (!token) {
@@ -51,7 +46,6 @@ export default function WebpayReturn() {
         })
 
         const json = await res.json().catch(() => ({}))
-        console.log("WEBPAY COMMIT RESULT:", json)
 
         if (!res.ok) {
           const msg =
