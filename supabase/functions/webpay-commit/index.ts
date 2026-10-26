@@ -1,5 +1,6 @@
 // supabase/functions/webpay-commit/index.ts
 import { createClient } from "jsr:@supabase/supabase-js@2"
+import { getCredentialById, getTransbankConfig } from "../_shared/transbankConfig.ts"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -42,6 +43,27 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
+    let apiKeyId = TBK_API_KEY_ID
+    let apiKeySecret = TBK_API_KEY_SECRET
+    try {
+      const { data: existingTx } = await supabase
+        .from("payment_transactions")
+        .select("payment_credential_id, raw_payload")
+        .eq("token_ws", token_ws)
+        .limit(1)
+      const first = existingTx?.[0]
+      const storedId = first?.payment_credential_id
+      const companyId = first?.raw_payload?.company_id ?? null
+      const stored = storedId ? await getCredentialById(Number(storedId)) : null
+      const resolved = stored ?? await getTransbankConfig(companyId ?? 1, "webpay_plus")
+      if (resolved?.apiKeyId && resolved.apiKeySecret) {
+        apiKeyId = resolved.apiKeyId
+        apiKeySecret = resolved.apiKeySecret
+      }
+    } catch (err) {
+      console.warn("webpay-commit credencial:", err instanceof Error ? err.message : "error")
+    }
+
     // 1) Commit TBK (PUT)
     const endpoint =
       `${TBK_HOST}/rswebpaytransaction/api/webpay/v1.2/transactions/${encodeURIComponent(token_ws)}`
@@ -50,8 +72,8 @@ Deno.serve(async (req) => {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Tbk-Api-Key-Id": TBK_API_KEY_ID,
-        "Tbk-Api-Key-Secret": TBK_API_KEY_SECRET,
+        "Tbk-Api-Key-Id": apiKeyId,
+        "Tbk-Api-Key-Secret": apiKeySecret,
       },
     })
 
@@ -89,26 +111,54 @@ Deno.serve(async (req) => {
       .map((t) => t.debt_id)
       .filter((x) => typeof x === "number") as number[]
 
-    // 3) Actualizar payment_transactions con resultado TBK
+    const firstPayload = txs?.[0]?.raw_payload ?? null
+    const customer_id_from_payload = firstPayload?.customer_id ?? null
+
+    // notified_before: messages outgoing first_contact antes del commit (fuente canónica).
+    let notified_before = false
+    if (isAuthorized && customer_id_from_payload != null) {
+      const { data: priorMsg, error: msgErr } = await supabase
+        .from("messages")
+        .select("id")
+        .eq("customer_id", customer_id_from_payload)
+        .eq("direction", "outgoing")
+        .eq("outgoing_type", "first_contact")
+        .lt("timestamp", nowIso)
+        .limit(1)
+        .maybeSingle()
+      if (msgErr) {
+        console.warn("⚠️ notified_before lookup:", msgErr.message)
+      } else {
+        notified_before = Boolean(priorMsg?.id)
+      }
+    }
+
+    // 3) Actualizar payment_transactions con resultado TBK + atribución
+    const txUpdate: Record<string, unknown> = {
+      status: internalStatus,
+      authorization_code: tbk.authorization_code ?? null,
+      response_code: tbk.response_code ?? null,
+      installments: tbk.installments_number ?? null,
+      payment_type_code: tbk.payment_type_code ?? null,
+      raw_response: tbk,
+      updated_at: nowIso,
+    }
+    if (isAuthorized) {
+      txUpdate.recovery_source = "payment_link"
+      txUpdate.notified_before = notified_before
+      txUpdate.event_type = "AUTHORIZATION"
+    }
+
     await supabase
       .from("payment_transactions")
-      .update({
-        status: internalStatus,
-        authorization_code: tbk.authorization_code ?? null,
-        response_code: tbk.response_code ?? null,
-        installments: tbk.installments_number ?? null,
-        payment_type_code: tbk.payment_type_code ?? null,
-        raw_response: tbk,
-        updated_at: nowIso,
-      })
+      .update(txUpdate)
       .eq("token_ws", token_ws)
 
     // 4) Si autorizado: crear/actualizar payment_methods (solo lo que se puede)
     let payment_method_id: number | null = null
 
     if (isAuthorized) {
-      const firstPayload = txs?.[0]?.raw_payload ?? null
-      const customer_id = firstPayload?.customer_id ?? null
+      const customer_id = customer_id_from_payload
       const company_id = firstPayload?.company_id ?? null
 
       // last4 (si viene)

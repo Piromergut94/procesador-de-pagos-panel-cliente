@@ -1,6 +1,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { getTransbankConfig } from "../_shared/transbankConfig.ts";
 console.log("Function started");
 function normalizeName(name) {
   return name.normalize("NFD") // separa acentos
@@ -69,13 +70,20 @@ Deno.serve(async (req)=>{
       });
     }
     const company_id = customer.company_id;
+    const tbk = await getTransbankConfig(company_id ?? 1, "oneclick_mall");
+    if (!tbk) {
+      return new Response(JSON.stringify({ error: "missing_payment_credentials" }), {
+        status: 409,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
     // --- API TRANSBANK ---
     const url = `https://webpay3g.transbank.cl/rswebpaytransaction/api/oneclick/v1.2/inscriptions/${tbk_token}`;
     const tbkResponse = await fetch(url, {
       method: "PUT",
       headers: {
-        "Tbk-Api-Key-Id": Deno.env.get("TBK_API_KEY_ID"),
-        "Tbk-Api-Key-Secret": Deno.env.get("TBK_API_KEY_SECRET"),
+        "Tbk-Api-Key-Id": tbk.apiKeyId,
+        "Tbk-Api-Key-Secret": tbk.apiKeySecret,
         "Content-Type": "application/json"
       }
     });
@@ -94,23 +102,59 @@ Deno.serve(async (req)=>{
     const encrypted = await encrypt(obj.tbk_user);
     const enrollmentName = normalizeName(customer.name || "");
     const enrollmentEmail = customer.email ?? null;
+    const nowIso = new Date().toISOString();
+
+    // Si había un OneClick bloqueado / needs_new_payment_method, marcar reinscripción.
+    const { data: oldPm } = await supabaseClient
+      .from("payment_methods")
+      .select("id")
+      .eq("customer_id", customer.id)
+      .eq("company_id", company_id)
+      .eq("method_type", "oneclick")
+      .is("deleted_at", null)
+      .in("retry_status", [
+        "needs_new_payment_method",
+        "blocked_hard",
+        "schedule_exhausted",
+      ])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const replacesId = oldPm?.id ?? null;
+
     // === UPSERT PAYMENT METHOD ===
-    const { error: upsertErr } = await supabaseClient.from("payment_methods").upsert({
-      company_id,
-      customer_id: customer.id,
-      tbk_user: encrypted.data,
-      tbk_user_iv: encrypted.iv,
-      method_type: "oneclick",
-      card_brand: obj.card_type ?? null,
-      card_number: obj.card_number,
-      expiration_date: null,
-      enrollment_name: enrollmentName,
-      enrollment_email: enrollmentEmail,
-      active: true,
-      updated_at: new Date().toISOString()
-    }, {
-      onConflict: "company_id,customer_id,tbk_user"
-    });
+    const { data: upsertedPm, error: upsertErr } = await supabaseClient
+      .from("payment_methods")
+      .upsert(
+        {
+          company_id,
+          customer_id: customer.id,
+          tbk_user: encrypted.data,
+          tbk_user_iv: encrypted.iv,
+          method_type: "oneclick",
+          card_brand: obj.card_type ?? null,
+          card_number: obj.card_number,
+          expiration_date: null,
+          enrollment_name: enrollmentName,
+          enrollment_email: enrollmentEmail,
+          active: true,
+          updated_at: nowIso,
+          ...(tbk.credentialId ? { payment_credential_id: tbk.credentialId } : {}),
+          ...(replacesId
+            ? {
+                reenrolled_at: nowIso,
+                replaces_payment_method_id: replacesId,
+              }
+            : {}),
+        },
+        {
+          onConflict: "company_id,customer_id,tbk_user",
+        },
+      )
+      .select("id")
+      .maybeSingle();
+
     if (upsertErr) {
       console.error(upsertErr);
       return new Response(JSON.stringify({
@@ -118,6 +162,20 @@ Deno.serve(async (req)=>{
       }), {
         status: 500
       });
+    }
+
+    // Si el upsert no devolvió fila (algunos drivers), asegúrate reenrollment por lookup.
+    if (replacesId && !upsertedPm?.id) {
+      await supabaseClient
+        .from("payment_methods")
+        .update({
+          reenrolled_at: nowIso,
+          replaces_payment_method_id: replacesId,
+          updated_at: nowIso,
+        })
+        .eq("company_id", company_id)
+        .eq("customer_id", customer.id)
+        .eq("tbk_user", encrypted.data);
     }
     const payload = {
       customer: customer.id,

@@ -1,5 +1,6 @@
 // supabase/functions/webpay-integration/index.ts
 import { createClient } from "jsr:@supabase/supabase-js@2"
+import { getTransbankConfig, returnUrlAllowed } from "../_shared/transbankConfig.ts"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -92,6 +93,19 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Invalid total amount" }, 400)
     }
 
+    const companyIds = [...new Set(debts.map((d) => d.company_id).filter((id) => id != null))]
+    if (companyIds.length > 1) {
+      return jsonResponse({ error: "Las deudas no son de la misma empresa" }, 400)
+    }
+    const companyId = Number(companyIds[0] ?? 1)
+    if (!(await returnUrlAllowed(companyId, return_url))) {
+      return jsonResponse({ error: "return_url no pertenece a la empresa" }, 400)
+    }
+    const tbkConfig = await getTransbankConfig(companyId, "webpay_plus")
+    if (!tbkConfig) {
+      return jsonResponse({ error: "missing_payment_credentials" }, 409)
+    }
+
     // 2) Crear en Transbank por el total
     const endpoint = `${TBK_HOST}/rswebpaytransaction/api/webpay/v1.2/transactions`
 
@@ -99,8 +113,8 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Tbk-Api-Key-Id": TBK_API_KEY_ID,
-        "Tbk-Api-Key-Secret": TBK_API_KEY_SECRET,
+        "Tbk-Api-Key-Id": tbkConfig.apiKeyId,
+        "Tbk-Api-Key-Secret": tbkConfig.apiKeySecret,
       },
       body: JSON.stringify({
         buy_order,
@@ -125,7 +139,9 @@ Deno.serve(async (req) => {
     const nowIso = new Date().toISOString()
     const company_id = debts.find((d) => d.company_id)?.company_id ?? null
 
+    // recovery_source=payment_link desde el alta; notified_before se completa en webpay-commit si autoriza.
     const rows = debts.map((d) => ({
+      ...(d.company_id != null ? { company_id: d.company_id } : {}),
       channel: "webpay",
       currency: "CLP",
       amount: Number(d.amount || 0),
@@ -135,6 +151,10 @@ Deno.serve(async (req) => {
       debt_id: d.id,
       payment_method_id,
       token_ws,
+      ...(tbkConfig.credentialId ? { payment_credential_id: tbkConfig.credentialId } : {}),
+      attempt_source: "unknown",
+      recovery_source: "payment_link",
+      notified_before: false,
       raw_payload: {
         customer_id: customer.id,
         company_id,

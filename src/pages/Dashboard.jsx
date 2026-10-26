@@ -9,6 +9,7 @@ import {
   saveCustomerInfoToStorage,
   getCustomerInfoFromStorage,
 } from '../utils/storage'
+import { useCompany } from '../CompanyContext'
 import './Dashboard.css'
 
 const API_URL =
@@ -26,6 +27,7 @@ const filterActiveCustomerProducts = (products) => {
 function Dashboard() {
   const { customer_token } = useParams()
   const navigate = useNavigate()
+  const company = useCompany()
   const [activeTab, setActiveTab] = useState('cuotas')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -102,9 +104,11 @@ function Dashboard() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            customer_token: customer_token,
-          }),
+          body: JSON.stringify(
+            company.sendSlug && company.slug
+              ? { customer_token, slug: company.slug }
+              : { customer_token }
+          ),
         })
 
         const data = await response.json()
@@ -219,8 +223,9 @@ function Dashboard() {
       }
     }
 
+    if (company.loading) return
     fetchCustomerInfo()
-  }, [customer_token])
+  }, [customer_token, company.loading, company.sendSlug, company.slug])
 
   const handleRegisterPayment = async () => {
     if (!customer_token) {

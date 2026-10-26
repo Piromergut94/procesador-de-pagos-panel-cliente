@@ -17,25 +17,38 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { textTofind } = await req.json();
+    const body = await req.json();
+    const textTofind = body?.textTofind;
+    const slug = typeof body?.slug === "string" ? body.slug.trim() : "";
 
     if (!textTofind) {
       return response({ error: "Debe enviar national_id o product_code" });
     }
 
     const supabaseClient = createClient(
-      // URL y KEY provistas por Supabase Runtime
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      (JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}").default ?? "")!
     );
 
-    // 1️⃣ Buscar por national_id en customers
+    let companyId = null;
+    if (slug) {
+      const { data: resolved, error: resolveErr } = await supabaseClient.rpc(
+        "resolve_portal_company",
+        { p_hostname: null, p_slug: slug },
+      );
+      const row = Array.isArray(resolved) ? resolved[0] : resolved;
+      if (resolveErr || !row?.company_id) {
+        return response({ error: "Empresa no encontrada" });
+      }
+      companyId = row.company_id;
+    }
 
-      const { data: customer, error } = await supabaseClient
-        .from("customers")
-        .select("portal_token")
-        .eq("national_id", removeDashAndDot(textTofind))
-        .maybeSingle();
+    let customerQuery = supabaseClient
+      .from("customers")
+      .select("portal_token")
+      .eq("national_id", removeDashAndDot(textTofind));
+    if (companyId != null) customerQuery = customerQuery.eq("company_id", companyId);
+    const { data: customer, error } = await customerQuery.maybeSingle();
 
       if (error) console.error("Error customers:", error);
 
@@ -46,11 +59,12 @@ Deno.serve(async (req) => {
 
     // 2️⃣ Buscar por product_code en customer_products
     if (textTofind) {
-      const { data: cp, error } = await supabaseClient
+      let productQuery = supabaseClient
         .from("customer_products")
         .select("customer_id")
-        .eq("product_code", textTofind)
-        .maybeSingle();
+        .eq("product_code", textTofind);
+      if (companyId != null) productQuery = productQuery.eq("company_id", companyId);
+      const { data: cp, error } = await productQuery.maybeSingle();
 
       if (error) console.error("Error customer_products:", error);
 

@@ -10,6 +10,7 @@ function PaymentCard({
   const [debts, setDebts] = useState([])
   const [loadingDebts, setLoadingDebts] = useState(false)
   const [loadedDebtsCustomerToken, setLoadedDebtsCustomerToken] = useState(null)
+  const [webpayAvailable, setWebpayAvailable] = useState(true)
 
   // ✅ MODAL
   const [selectedDebt, setSelectedDebt] = useState(null)
@@ -77,6 +78,25 @@ function PaymentCard({
   const totalToPay = useMemo(() => {
     return overdueDebts.reduce((acc, d) => acc + Number(d.amount || 0), 0)
   }, [overdueDebts])
+
+  useEffect(() => {
+    if (!customerToken) return
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/portal-payment-options`
+    const anonKey = import.meta.env.VITE_SUPABASE_SERVICE_ANON_KEY
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(anonKey ? { apikey: anonKey, Authorization: `Bearer ${anonKey}` } : {}),
+      },
+      body: JSON.stringify({ customer_token: customerToken }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.webpay === false) setWebpayAvailable(false)
+      })
+      .catch(() => {})
+  }, [customerToken])
 
   const handlePayAll = async () => {
     if (overdueDebts.length === 0) return
@@ -288,6 +308,7 @@ function PaymentCard({
               <strong>{formatAmountCLP(totalToPay)}</strong>
             </div>
 
+            {webpayAvailable ? (
             <button
               className="pay-button"
               onClick={handlePayAll}
@@ -295,6 +316,9 @@ function PaymentCard({
             >
               {isPaying ? 'Procesando...' : 'Pagar'}
             </button>
+            ) : (
+              <span>El pago por link no está disponible.</span>
+            )}
           </div>
         </div>
 

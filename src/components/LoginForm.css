@@ -72,7 +72,7 @@
 .login-button {
   width: 100%;
   padding: 0.875rem 1.5rem;
-  background-color: #ff6b35;
+  background-color: var(--portal-primary, #ff6b35);
   color: #ffffff;
   border: none;
   border-radius: 6px;
