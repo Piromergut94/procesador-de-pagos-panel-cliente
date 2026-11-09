@@ -261,6 +261,23 @@ function Dashboard() {
         return
       }
 
+      if (recurring.provider === 'network_token') {
+        if (!options?.evervault_app_id) {
+          throw new Error('Falta configuración Evervault para network token')
+        }
+        const ntBase = company?.mode === 'path' && company?.slug
+          ? `/${company.slug}/nt-inscription/${customer_token}`
+          : `/nt-inscription/${customer_token}`
+        navigate(ntBase, {
+          state: {
+            customer_token,
+            evervault_app_id: options.evervault_app_id,
+            evervault_team_id: options.evervault_team_id || null,
+          },
+        })
+        return
+      }
+
       if (recurring.provider === 'mercadopago') {
         const mpStart = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/start-inscription-mp`,

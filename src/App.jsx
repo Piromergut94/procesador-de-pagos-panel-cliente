@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginScreen from "./components/LoginScreen";
 import Dashboard from "./pages/Dashboard";
+import NetworkTokenInscription from "./pages/NetworkTokenInscription";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import TransbankRedirect from "./pages/TransbankRedirect";
 import MercadoPagoInscription from "./pages/MercadoPagoInscription";
@@ -19,6 +20,7 @@ function CurrentRoutes() {
       <Route path="/payment-success/:customer_token" element={<PaymentSuccess />} />
       <Route path="/transbank-redirect" element={<TransbankRedirect />} />
       <Route path="/mp-inscription/:customer_token" element={<MercadoPagoInscription />} />
+      <Route path="/nt-inscription/:customer_token" element={<NetworkTokenInscription />} />
       <Route path="/webpay/return" element={<WebpayReturn />} />
       <Route path="/politica-privacidad" element={<PrivacyPolicy />} />
     </Routes>
@@ -32,9 +34,11 @@ function PathRoutes() {
       <Route path="/:companySlug/dashboard/:customer_token" element={<Dashboard />} />
       <Route path="/:companySlug/payment-success/:customer_token" element={<PaymentSuccess />} />
       <Route path="/:companySlug/mp-inscription/:customer_token" element={<MercadoPagoInscription />} />
+      <Route path="/:companySlug/nt-inscription/:customer_token" element={<NetworkTokenInscription />} />
       <Route path="/:companySlug/politica-privacidad" element={<PrivacyPolicy />} />
       <Route path="/transbank-redirect" element={<TransbankRedirect />} />
       <Route path="/mp-inscription/:customer_token" element={<MercadoPagoInscription />} />
+      <Route path="/nt-inscription/:customer_token" element={<NetworkTokenInscription />} />
       <Route path="/webpay/return" element={<WebpayReturn />} />
     </Routes>
   );
