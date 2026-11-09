@@ -207,6 +207,7 @@ Deno.serve(async (req) => {
               company_id,
               customer_id,
               method_type: "webpay_plus",
+              provider: "transbank",
               active: true,
               card_number: maskedCard,
               // lo demás NULL

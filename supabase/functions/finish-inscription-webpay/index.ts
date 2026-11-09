@@ -133,6 +133,7 @@ Deno.serve(async (req)=>{
           tbk_user: encrypted.data,
           tbk_user_iv: encrypted.iv,
           method_type: "oneclick",
+          provider: "transbank",
           card_brand: obj.card_type ?? null,
           card_number: obj.card_number,
           expiration_date: null,

@@ -4,6 +4,7 @@ import LoginScreen from "./components/LoginScreen";
 import Dashboard from "./pages/Dashboard";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import TransbankRedirect from "./pages/TransbankRedirect";
+import MercadoPagoInscription from "./pages/MercadoPagoInscription";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import WebpayReturn from "./components/WebpayReturn";
 import { CompanyProvider, useCompany } from "./CompanyContext";
@@ -17,6 +18,7 @@ function CurrentRoutes() {
       <Route path="/dashboard/:customer_token" element={<Dashboard />} />
       <Route path="/payment-success/:customer_token" element={<PaymentSuccess />} />
       <Route path="/transbank-redirect" element={<TransbankRedirect />} />
+      <Route path="/mp-inscription/:customer_token" element={<MercadoPagoInscription />} />
       <Route path="/webpay/return" element={<WebpayReturn />} />
       <Route path="/politica-privacidad" element={<PrivacyPolicy />} />
     </Routes>
@@ -29,8 +31,10 @@ function PathRoutes() {
       <Route path="/:companySlug" element={<LoginScreen />} />
       <Route path="/:companySlug/dashboard/:customer_token" element={<Dashboard />} />
       <Route path="/:companySlug/payment-success/:customer_token" element={<PaymentSuccess />} />
+      <Route path="/:companySlug/mp-inscription/:customer_token" element={<MercadoPagoInscription />} />
       <Route path="/:companySlug/politica-privacidad" element={<PrivacyPolicy />} />
       <Route path="/transbank-redirect" element={<TransbankRedirect />} />
+      <Route path="/mp-inscription/:customer_token" element={<MercadoPagoInscription />} />
       <Route path="/webpay/return" element={<WebpayReturn />} />
     </Routes>
   );

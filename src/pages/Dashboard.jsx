@@ -236,18 +236,80 @@ function Dashboard() {
     setRegisteringPayment(true)
 
     try {
-      // Obtener datos del cliente desde localStorag
-
-      // Llamar a la API de clubdelseguro
-      const response = await fetch('https://ovukfntlauhftpwymvdr.supabase.co/functions/v1/start-inscription-oneclick', {
+      const optionsUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/portal-payment-options`
+      const anonKey = import.meta.env.VITE_SUPABASE_SERVICE_ANON_KEY
+      const optionsRes = await fetch(optionsUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(anonKey ? { apikey: anonKey, Authorization: `Bearer ${anonKey}` } : {}),
         },
-        body: JSON.stringify({
-          customer_token: customer_token,
-        }),
+        body: JSON.stringify({ customer_token }),
       })
+      const options = await optionsRes.json().catch(() => ({}))
+      const recurring = options?.recurring ?? {
+        provider: 'transbank',
+        available: true,
+      }
+
+      if (recurring.available === false) {
+        alert(
+          recurring.provider === 'mercadopago'
+            ? 'La inscripción con Mercado Pago no está disponible (faltan credenciales).'
+            : 'La inscripción de medio de pago no está disponible.'
+        )
+        return
+      }
+
+      if (recurring.provider === 'mercadopago') {
+        const mpStart = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/start-inscription-mp`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(anonKey
+                ? { apikey: anonKey, Authorization: `Bearer ${anonKey}` }
+                : {}),
+            },
+            body: JSON.stringify({ customer_token }),
+          },
+        )
+        const mpData = await mpStart.json().catch(() => ({}))
+        if (!mpStart.ok || mpData.status !== 'success' || !mpData.object?.public_key) {
+          throw new Error(mpData.message || 'No se pudo iniciar inscripción Mercado Pago')
+        }
+        const base = company?.mode === 'path' && company?.slug
+          ? `/${company.slug}/mp-inscription/${customer_token}`
+          : `/mp-inscription/${customer_token}`
+        navigate(base, {
+          state: {
+            customer_token,
+            mpSession: mpData.object,
+          },
+        })
+        return
+      }
+
+      if (recurring.provider && recurring.provider !== 'transbank') {
+        alert(
+          `Inscripción con ${recurring.provider} aún no disponible. Contacta a soporte.`
+        )
+        return
+      }
+
+      const response = await fetch(
+        'https://ovukfntlauhftpwymvdr.supabase.co/functions/v1/start-inscription-oneclick',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customer_token: customer_token,
+          }),
+        }
+      )
 
       if (!response.ok) {
         throw new Error(`Error al iniciar inscripción: ${response.status}`)
@@ -258,7 +320,6 @@ function Dashboard() {
       if (data.status === 'success' && data.object) {
         const { token, url_webpay } = data.object
 
-        // Redirigir a la página intermedia de Transbank
         navigate('/transbank-redirect', {
           state: {
             webpayUrl: url_webpay,
