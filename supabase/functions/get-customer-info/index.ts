@@ -12,7 +12,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { customer_token } = await req.json();
+    const body = await req.json();
+    const customer_token = body?.customer_token;
+    const slug = typeof body?.slug === "string" ? body.slug.trim() : "";
 
     if (!customer_token) {
       return jsonResponse({ error: "Debe enviar customer_token" });
@@ -27,13 +29,24 @@ Deno.serve(async (req) => {
 
     const { data: customer, errorCustomer } = await supabaseClient
       .from("customers")
-      .select("id, name, national_id")
+      .select("id, name, national_id, company_id")
       .eq("portal_token", customer_token)
       .single();
 
     if (errorCustomer || !customer) {
       console.error("Supabase customer error:", errorCustomer);
       return jsonResponse({ error: "Error al obtener cliente" });
+    }
+
+    if (slug) {
+      const { data: resolved, error: resolveErr } = await supabaseClient.rpc(
+        "resolve_portal_company",
+        { p_hostname: null, p_slug: slug },
+      );
+      const row = Array.isArray(resolved) ? resolved[0] : resolved;
+      if (resolveErr || !row?.company_id || Number(row.company_id) !== Number(customer.company_id ?? 1)) {
+        return jsonResponse({ error: "Empresa no encontrada" });
+      }
     }
 
     // Buscar solo los productos activos y los campos usados por el frontend.

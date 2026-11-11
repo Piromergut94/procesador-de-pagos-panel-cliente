@@ -9,6 +9,7 @@ import {
   saveCustomerInfoToStorage,
   getCustomerInfoFromStorage,
 } from '../utils/storage'
+import { useCompany } from '../CompanyContext'
 import './Dashboard.css'
 
 const API_URL =
@@ -26,6 +27,7 @@ const filterActiveCustomerProducts = (products) => {
 function Dashboard() {
   const { customer_token } = useParams()
   const navigate = useNavigate()
+  const company = useCompany()
   const [activeTab, setActiveTab] = useState('cuotas')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -102,9 +104,11 @@ function Dashboard() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            customer_token: customer_token,
-          }),
+          body: JSON.stringify(
+            company.sendSlug && company.slug
+              ? { customer_token, slug: company.slug }
+              : { customer_token }
+          ),
         })
 
         const data = await response.json()
@@ -219,8 +223,9 @@ function Dashboard() {
       }
     }
 
+    if (company.loading) return
     fetchCustomerInfo()
-  }, [customer_token])
+  }, [customer_token, company.loading, company.sendSlug, company.slug])
 
   const handleRegisterPayment = async () => {
     if (!customer_token) {
@@ -231,18 +236,97 @@ function Dashboard() {
     setRegisteringPayment(true)
 
     try {
-      // Obtener datos del cliente desde localStorag
-
-      // Llamar a la API de clubdelseguro
-      const response = await fetch('https://ovukfntlauhftpwymvdr.supabase.co/functions/v1/start-inscription-oneclick', {
+      const optionsUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/portal-payment-options`
+      const anonKey = import.meta.env.VITE_SUPABASE_SERVICE_ANON_KEY
+      const optionsRes = await fetch(optionsUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(anonKey ? { apikey: anonKey, Authorization: `Bearer ${anonKey}` } : {}),
         },
-        body: JSON.stringify({
-          customer_token: customer_token,
-        }),
+        body: JSON.stringify({ customer_token }),
       })
+      const options = await optionsRes.json().catch(() => ({}))
+      const recurring = options?.recurring ?? {
+        provider: 'transbank',
+        available: true,
+      }
+
+      if (recurring.available === false) {
+        alert(
+          recurring.provider === 'mercadopago'
+            ? 'La inscripción con Mercado Pago no está disponible (faltan credenciales).'
+            : 'La inscripción de medio de pago no está disponible.'
+        )
+        return
+      }
+
+      if (recurring.provider === 'network_token') {
+        if (!options?.evervault_app_id) {
+          throw new Error('Falta configuración Evervault para network token')
+        }
+        const ntBase = company?.mode === 'path' && company?.slug
+          ? `/${company.slug}/nt-inscription/${customer_token}`
+          : `/nt-inscription/${customer_token}`
+        navigate(ntBase, {
+          state: {
+            customer_token,
+            evervault_app_id: options.evervault_app_id,
+            evervault_team_id: options.evervault_team_id || null,
+          },
+        })
+        return
+      }
+
+      if (recurring.provider === 'mercadopago') {
+        const mpStart = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/start-inscription-mp`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(anonKey
+                ? { apikey: anonKey, Authorization: `Bearer ${anonKey}` }
+                : {}),
+            },
+            body: JSON.stringify({ customer_token }),
+          },
+        )
+        const mpData = await mpStart.json().catch(() => ({}))
+        if (!mpStart.ok || mpData.status !== 'success' || !mpData.object?.public_key) {
+          throw new Error(mpData.message || 'No se pudo iniciar inscripción Mercado Pago')
+        }
+        const base = company?.mode === 'path' && company?.slug
+          ? `/${company.slug}/mp-inscription/${customer_token}`
+          : `/mp-inscription/${customer_token}`
+        navigate(base, {
+          state: {
+            customer_token,
+            mpSession: mpData.object,
+          },
+        })
+        return
+      }
+
+      if (recurring.provider && recurring.provider !== 'transbank') {
+        alert(
+          `Inscripción con ${recurring.provider} aún no disponible. Contacta a soporte.`
+        )
+        return
+      }
+
+      const response = await fetch(
+        'https://ovukfntlauhftpwymvdr.supabase.co/functions/v1/start-inscription-oneclick',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customer_token: customer_token,
+          }),
+        }
+      )
 
       if (!response.ok) {
         throw new Error(`Error al iniciar inscripción: ${response.status}`)
@@ -253,7 +337,6 @@ function Dashboard() {
       if (data.status === 'success' && data.object) {
         const { token, url_webpay } = data.object
 
-        // Redirigir a la página intermedia de Transbank
         navigate('/transbank-redirect', {
           state: {
             webpayUrl: url_webpay,

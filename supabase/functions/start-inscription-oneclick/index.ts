@@ -1,6 +1,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { getTransbankConfig, primaryPortalHost } from "../_shared/transbankConfig.ts";
 console.info('server started');
 function normalizeName(name) {
   return name.normalize("NFD") // separa acentos
@@ -45,7 +46,7 @@ Deno.serve(async (req)=>{
   }
   const { data: customer, errorCustomer } = await supabaseClient
     .from("customers")
-    .select("id, name, email, portal_token")
+    .select("id, name, email, portal_token, company_id")
     .eq("portal_token", customer_token)
     .single();
   if (errorCustomer || !customer) {
@@ -60,17 +61,28 @@ Deno.serve(async (req)=>{
       }
     });
   }
+  const tbk = await getTransbankConfig(customer.company_id ?? 1, "oneclick_mall");
+  if (!tbk) {
+    return new Response(JSON.stringify({
+      status: "error",
+      message: "missing_payment_credentials"
+    }), {
+      status: 409,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+  }
+  const portalHost = (await primaryPortalHost(customer.company_id ?? 1)) || "portal-pagos.clubdelseguro.cl";
   const url = "https://webpay3g.transbank.cl/rswebpaytransaction/api/oneclick/v1.2/inscriptions";
   const payload = {
     username: normalizeName(customer.name || ""),
     email: customer.email ?? null,
-    response_url: "https://portal-pagos.clubdelseguro.cl/payment-success/" + customer.portal_token
+    response_url: "https://" + portalHost + "/payment-success/" + customer.portal_token
   };
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      "Tbk-Api-Key-Id": Deno.env.get("TBK_API_KEY_ID"),
-      "Tbk-Api-Key-Secret": Deno.env.get("TBK_API_KEY_SECRET"),
+      "Tbk-Api-Key-Id": tbk.apiKeyId,
+      "Tbk-Api-Key-Secret": tbk.apiKeySecret,
       "Content-Type": "application/json"
     },
     body: JSON.stringify(payload)

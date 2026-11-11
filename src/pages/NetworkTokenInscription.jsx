@@ -1,48 +1,50 @@
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Card, EvervaultProvider } from '@evervault/react'
+import { EvervaultProvider, Card } from '@evervault/react'
 import './NetworkTokenInscription.css'
 
-const SUPABASE_URL = 'https://ovukfntlauhftpwymvdr.supabase.co'
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ANON_KEY
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const ANON_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ANON_KEY
 
+/**
+ * Inscripción Network Token: Evervault Card (PCI iframe) → finish-inscription-network-token.
+ */
 function NetworkTokenInscription() {
-  const { customer_token: tokenParam } = useParams()
+  const { customer_token: paramToken } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const routeState = location.state || {}
-  const customerToken = routeState.customer_token || tokenParam
-  const evervaultAppId = routeState.evervault_app_id || ''
-  const evervaultTeamId = routeState.evervault_team_id || undefined
+  const state = location.state || {}
+
+  const customerToken = state.customer_token || paramToken
+  const appId = state.evervault_app_id || ''
+  const teamId = state.evervault_team_id || undefined
 
   const [cardPayload, setCardPayload] = useState(null)
-  const [holderName, setHolderName] = useState('')
+  const [name, setName] = useState('')
   const [rut, setRut] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
-  const [enrolled, setEnrolled] = useState(null)
+  const [done, setDone] = useState(null)
 
   const canSubmit = useMemo(() => {
     const card = cardPayload?.card
     return Boolean(
       customerToken &&
-        evervaultAppId &&
+        appId &&
         card?.number &&
         card?.expiry?.month != null &&
         card?.expiry?.year != null &&
-        holderName.trim() &&
+        name.trim() &&
         rut.trim() &&
-        !submitting
+        !submitting,
     )
-  }, [cardPayload, customerToken, evervaultAppId, holderName, rut, submitting])
+  }, [cardPayload, customerToken, appId, name, rut, submitting])
 
-  const handleSubmit = async (event) => {
+  const onSubmit = async (event) => {
     event.preventDefault()
     if (!canSubmit) return
-
     setSubmitting(true)
     setError(null)
-
     try {
       const card = cardPayload.card
       const response = await fetch(
@@ -51,11 +53,8 @@ function NetworkTokenInscription() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(SUPABASE_ANON_KEY
-              ? {
-                  apikey: SUPABASE_ANON_KEY,
-                  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-                }
+            ...(ANON_KEY
+              ? { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` }
               : {}),
           },
           body: JSON.stringify({
@@ -69,17 +68,17 @@ function NetworkTokenInscription() {
               cvc: card.cvc,
             },
             cardholder: {
-              name: holderName.trim(),
+              name: name.trim(),
               identification: { type: 'RUT', number: rut.trim() },
             },
           }),
-        }
+        },
       )
-      const payload = await response.json().catch(() => ({}))
-      if (!response.ok || payload.status !== 'success') {
-        throw new Error(payload.message || 'No se pudo inscribir el medio de pago')
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || data.status !== 'success') {
+        throw new Error(data.message || 'No se pudo inscribir el medio de pago')
       }
-      setEnrolled(payload.object)
+      setDone(data.object)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -87,9 +86,9 @@ function NetworkTokenInscription() {
     }
   }
 
-  if (!customerToken || !evervaultAppId) {
+  if (!customerToken || !appId) {
     return (
-      <div className="mp-inscription">
+      <div className="nt-inscription">
         <p>Sesión de inscripción inválida. Volvé al dashboard.</p>
         <button type="button" onClick={() => navigate(-1)}>
           Volver
@@ -98,12 +97,12 @@ function NetworkTokenInscription() {
     )
   }
 
-  if (enrolled) {
+  if (done) {
     return (
-      <div className="mp-inscription">
+      <div className="nt-inscription">
         <h1>Medio de pago inscrito</h1>
         <p>
-          {enrolled.brand || 'Tarjeta'} terminada en {enrolled.last_four || '****'}
+          {done.brand || 'Tarjeta'} terminada en {done.last_four || '****'}
         </p>
         <button
           type="button"
@@ -116,22 +115,19 @@ function NetworkTokenInscription() {
   }
 
   return (
-    <div className="mp-inscription">
+    <div className="nt-inscription">
       <h1>Inscribir medio de pago</h1>
-      <p className="mp-inscription-note">
+      <p className="nt-inscription-note">
         Los datos de la tarjeta se cargan de forma segura (Evervault). No
         almacenamos el número en claro.
       </p>
-      <EvervaultProvider
-        appId={evervaultAppId}
-        {...(evervaultTeamId ? { teamId: evervaultTeamId } : {})}
-      >
-        <form onSubmit={handleSubmit} className="mp-inscription-form">
+      <EvervaultProvider appId={appId} {...(teamId ? { teamId } : {})}>
+        <form onSubmit={onSubmit} className="nt-inscription-form">
           <label>
             Nombre del titular
             <input
-              value={holderName}
-              onChange={(event) => setHolderName(event.target.value)}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
               autoComplete="cc-name"
               placeholder="Como figura en la tarjeta"
               required
@@ -158,7 +154,7 @@ function NetworkTokenInscription() {
               </Card.Row>
             </Card>
           </div>
-          {error ? <p className="mp-inscription-error">{error}</p> : null}
+          {error ? <p className="nt-inscription-error">{error}</p> : null}
           <button type="submit" disabled={!canSubmit}>
             {submitting ? 'Inscribiendo…' : 'Inscribir'}
           </button>

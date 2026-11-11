@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Header from './Header'
 import LoginForm from './LoginForm'
 import Footer from './Footer'
+import { useCompany } from '../CompanyContext'
 import './LoginScreen.css'
 
 const FIND_CUSTOMER_URL =
@@ -12,6 +13,7 @@ function LoginScreen() {
   const [rut, setRut] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const company = useCompany()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -29,7 +31,11 @@ function LoginScreen() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ textTofind }),
+        body: JSON.stringify(
+          company.sendSlug && company.slug
+            ? { textTofind, slug: company.slug }
+            : { textTofind }
+        ),
       })
 
       if (!response.ok) {
@@ -44,7 +50,8 @@ function LoginScreen() {
       }
 
       if (data.customer_token) {
-        navigate(`/dashboard/${data.customer_token}`)
+        const prefix = company.mode === 'path' && company.slug ? `/${company.slug}` : ''
+        navigate(`${prefix}/dashboard/${data.customer_token}`)
         return
       }
 

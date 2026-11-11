@@ -10,6 +10,10 @@ function PaymentCard({
   const [debts, setDebts] = useState([])
   const [loadingDebts, setLoadingDebts] = useState(false)
   const [loadedDebtsCustomerToken, setLoadedDebtsCustomerToken] = useState(null)
+  const [webpayAvailable, setWebpayAvailable] = useState(true)
+  const [onetapAvailable, setOnetapAvailable] = useState(true)
+  const [recurringAvailable, setRecurringAvailable] = useState(true)
+  const [recurringProvider, setRecurringProvider] = useState('transbank')
 
   // ✅ MODAL
   const [selectedDebt, setSelectedDebt] = useState(null)
@@ -77,6 +81,34 @@ function PaymentCard({
   const totalToPay = useMemo(() => {
     return overdueDebts.reduce((acc, d) => acc + Number(d.amount || 0), 0)
   }, [overdueDebts])
+
+  useEffect(() => {
+    if (!customerToken) return
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/portal-payment-options`
+    const anonKey = import.meta.env.VITE_SUPABASE_SERVICE_ANON_KEY
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(anonKey ? { apikey: anonKey, Authorization: `Bearer ${anonKey}` } : {}),
+      },
+      body: JSON.stringify({ customer_token: customerToken }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data) return
+        if (data.webpay === false) setWebpayAvailable(false)
+        if (data.onetap && typeof data.onetap.available === 'boolean') {
+          setOnetapAvailable(data.onetap.available)
+          setWebpayAvailable(Boolean(data.onetap.available && data.onetap.provider === 'transbank'))
+        }
+        if (data.recurring && typeof data.recurring.available === 'boolean') {
+          setRecurringAvailable(data.recurring.available)
+          if (data.recurring.provider) setRecurringProvider(data.recurring.provider)
+        }
+      })
+      .catch(() => {})
+  }, [customerToken])
 
   const handlePayAll = async () => {
     if (overdueDebts.length === 0) return
@@ -288,6 +320,7 @@ function PaymentCard({
               <strong>{formatAmountCLP(totalToPay)}</strong>
             </div>
 
+            {onetapAvailable && webpayAvailable ? (
             <button
               className="pay-button"
               onClick={handlePayAll}
@@ -295,6 +328,9 @@ function PaymentCard({
             >
               {isPaying ? 'Procesando...' : 'Pagar'}
             </button>
+            ) : (
+              <span>El pago por link no está disponible.</span>
+            )}
           </div>
         </div>
 
@@ -325,13 +361,21 @@ function PaymentCard({
           </p>
         </div>
 
-        <button
-          className="payment-card-button"
-          onClick={onRegisterPayment}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Procesando...' : 'Inscribir medio de pago'}
-        </button>
+        {recurringAvailable ? (
+          <button
+            className="payment-card-button"
+            onClick={onRegisterPayment}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Procesando...' : 'Inscribir medio de pago'}
+          </button>
+        ) : (
+          <p className="payment-card-subtitle">
+            {recurringProvider === 'mercadopago'
+              ? 'La inscripción con Mercado Pago no está disponible (faltan credenciales de la empresa).'
+              : 'La inscripción de medio de pago no está disponible.'}
+          </p>
+        )}
       </div>
     </div>
   )
