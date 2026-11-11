@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import PaymentSuccess from './pages/PaymentSuccess'
 import TransbankRedirect from './pages/TransbankRedirect'
 import PrivacyPolicy from './pages/PrivacyPolicy'
+import NetworkTokenInscription from './pages/NetworkTokenInscription'
 import WebpayReturn from './components/WebpayReturn'
 import './App.css'
 
@@ -25,6 +26,10 @@ function App() {
         <Route
           path="/webpay/return"
           element={<WebpayReturn />}
+        />
+        <Route
+          path="/nt-inscription/:customer_token"
+          element={<NetworkTokenInscription />}
         />
         <Route path="/politica-privacidad" element={<PrivacyPolicy />} />
       </Routes>

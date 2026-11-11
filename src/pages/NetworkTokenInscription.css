@@ -1,0 +1,162 @@
+.mp-inscription {
+  min-height: 100vh;
+  background: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 16px 48px;
+  box-sizing: border-box;
+}
+
+.mp-inscription:has(.mp-inscription-form) > h1 {
+  width: min(440px, 100%);
+  margin: 0;
+  background: #fff;
+  padding: 22px 20px 0;
+  border: 1px solid #e6e8ee;
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  font-size: 1.35rem;
+  line-height: 1.25;
+  font-weight: 750;
+  color: #111;
+  box-sizing: border-box;
+}
+
+.mp-inscription:has(.mp-inscription-form) > .mp-inscription-note {
+  width: min(440px, 100%);
+  margin: 0;
+  background: #fff;
+  padding: 8px 20px 4px;
+  border-left: 1px solid #e6e8ee;
+  border-right: 1px solid #e6e8ee;
+  color: #667085;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+.mp-inscription-form {
+  width: min(440px, 100%);
+  margin: 0;
+  background: #fff;
+  padding: 14px 20px 20px;
+  border: 1px solid #e6e8ee;
+  border-top: 0;
+  border-radius: 0 0 18px 18px;
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+}
+
+.mp-inscription-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: #344054;
+}
+
+.mp-inscription-form input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 16px;
+  background: #fff;
+  color: #111;
+  box-sizing: border-box;
+}
+
+.mp-inscription-form input:focus {
+  outline: none;
+  border-color: #ff6d2d;
+  box-shadow: 0 0 0 3px rgba(255, 109, 45, 0.2);
+}
+
+.mp-inscription-form button,
+.mp-inscription > button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: #ff6d2d;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.mp-inscription-form button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.nt-evervault-card,
+.nt-evervault-card ev-card {
+  display: block;
+  width: 100%;
+}
+
+.mp-inscription-error {
+  margin: 0;
+}
+
+.mp-inscription:not(:has(form)) {
+  justify-content: center;
+}
+
+.mp-inscription:not(:has(form)) > h1,
+.mp-inscription:not(:has(form)) > p,
+.mp-inscription:not(:has(form)) > button {
+  width: min(440px, 100%);
+  box-sizing: border-box;
+}
+
+.mp-inscription:not(:has(form)) > h1 {
+  background: #fff;
+  margin: 0;
+  padding: 22px 20px 0;
+  border: 1px solid #e6e8ee;
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  font-size: 1.35rem;
+  line-height: 1.25;
+}
+
+.mp-inscription:not(:has(form)) > p {
+  background: #fff;
+  margin: 0;
+  padding: 8px 20px 16px;
+  border-left: 1px solid #e6e8ee;
+  border-right: 1px solid #e6e8ee;
+  color: #344054;
+  line-height: 1.45;
+}
+
+.mp-inscription:not(:has(form)) > button {
+  border-radius: 0 0 18px 18px;
+}
+
+@media (max-width: 480px) {
+  .mp-inscription {
+    padding: 16px 12px 32px;
+  }
+
+  .mp-inscription:has(.mp-inscription-form) > h1,
+  .mp-inscription:not(:has(form)) > h1 {
+    font-size: 1.25rem;
+    padding: 18px 16px 0;
+  }
+
+  .mp-inscription:has(.mp-inscription-form) > .mp-inscription-note,
+  .mp-inscription-form,
+  .mp-inscription:not(:has(form)) > p,
+  .mp-inscription:not(:has(form)) > button {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
