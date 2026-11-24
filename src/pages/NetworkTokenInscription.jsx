@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { EvervaultProvider, Card } from '@evervault/react'
-import './MercadoPagoInscription.css'
+import './NetworkTokenInscription.css'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const ANON_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ANON_KEY
@@ -40,14 +40,14 @@ function NetworkTokenInscription() {
     )
   }, [cardPayload, customerToken, appId, name, rut, submitting])
 
-  const onSubmit = async (e) => {
-    e.preventDefault()
+  const onSubmit = async (event) => {
+    event.preventDefault()
     if (!canSubmit) return
     setSubmitting(true)
     setError(null)
     try {
       const card = cardPayload.card
-      const res = await fetch(
+      const response = await fetch(
         `${SUPABASE_URL}/functions/v1/finish-inscription-network-token`,
         {
           method: 'POST',
@@ -74,8 +74,8 @@ function NetworkTokenInscription() {
           }),
         },
       )
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok || data.status !== 'success') {
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || data.status !== 'success') {
         const detail = data?.validation?.status_detail
         const base = data.message || 'No se pudo inscribir el medio de pago'
         throw new Error(detail ? `${base} (${detail})` : base)
@@ -90,7 +90,7 @@ function NetworkTokenInscription() {
 
   if (!customerToken || !appId) {
     return (
-      <div className="mp-inscription">
+      <div className="nt-inscription">
         <p>Sesión de inscripción inválida. Volvé al dashboard.</p>
         <button type="button" onClick={() => navigate(-1)}>
           Volver
@@ -101,7 +101,7 @@ function NetworkTokenInscription() {
 
   if (done) {
     return (
-      <div className="mp-inscription">
+      <div className="nt-inscription">
         <h1>Medio de pago inscrito</h1>
         <p>
           {done.brand || 'Tarjeta'} terminada en {done.last_four || '****'}
@@ -117,25 +117,25 @@ function NetworkTokenInscription() {
   }
 
   return (
-    <div className="mp-inscription">
+    <div className="nt-inscription">
       <h1>Inscribir medio de pago</h1>
-      <p className="mp-inscription-note">
+      <p className="nt-inscription-note">
         Los datos de la tarjeta se cargan de forma segura (Evervault). No
         almacenamos el número en claro.
       </p>
-      <p className="mp-inscription-note">
+      <p className="nt-inscription-note">
         Para validar tu tarjeta haremos una reserva de $100 que no se cobra.
         Algunos bancos pueden mostrar esa retención unas horas o días.
       </p>
-
       <EvervaultProvider appId={appId} {...(teamId ? { teamId } : {})}>
-        <form onSubmit={onSubmit} className="mp-inscription-form">
+        <form onSubmit={onSubmit} className="nt-inscription-form">
           <label>
             Nombre del titular
             <input
               value={name}
-              onChange={(ev) => setName(ev.target.value)}
+              onChange={(event) => setName(event.target.value)}
               autoComplete="cc-name"
+              placeholder="Como figura en la tarjeta"
               required
             />
           </label>
@@ -143,13 +143,15 @@ function NetworkTokenInscription() {
             RUT
             <input
               value={rut}
-              onChange={(ev) => setRut(ev.target.value)}
+              onChange={(event) => setRut(event.target.value)}
+              inputMode="text"
+              autoComplete="off"
+              placeholder="12.345.678-9"
               required
             />
           </label>
-
           <div className="nt-evervault-card">
-            <Card onChange={setCardPayload}>
+            <Card theme="clean" onChange={setCardPayload}>
               <Card.Number label="Número de tarjeta" />
               <Card.Row>
                 <Card.ExpiryMonth label="Mes" />
@@ -158,9 +160,7 @@ function NetworkTokenInscription() {
               </Card.Row>
             </Card>
           </div>
-
-          {error && <p className="mp-inscription-error">{error}</p>}
-
+          {error ? <p className="nt-inscription-error">{error}</p> : null}
           <button type="submit" disabled={!canSubmit}>
             {submitting ? 'Inscribiendo…' : 'Inscribir'}
           </button>
