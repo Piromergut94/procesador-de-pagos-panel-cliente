@@ -76,7 +76,9 @@ function NetworkTokenInscription() {
       )
       const data = await res.json().catch(() => ({}))
       if (!res.ok || data.status !== 'success') {
-        throw new Error(data.message || 'No se pudo inscribir el medio de pago')
+        const detail = data?.validation?.status_detail
+        const base = data.message || 'No se pudo inscribir el medio de pago'
+        throw new Error(detail ? `${base} (${detail})` : base)
       }
       setDone(data.object)
     } catch (err) {
@@ -120,6 +122,10 @@ function NetworkTokenInscription() {
       <p className="mp-inscription-note">
         Los datos de la tarjeta se cargan de forma segura (Evervault). No
         almacenamos el número en claro.
+      </p>
+      <p className="mp-inscription-note">
+        Para validar tu tarjeta haremos una reserva de $100 que no se cobra.
+        Algunos bancos pueden mostrar esa retención unas horas o días.
       </p>
 
       <EvervaultProvider appId={appId} {...(teamId ? { teamId } : {})}>
