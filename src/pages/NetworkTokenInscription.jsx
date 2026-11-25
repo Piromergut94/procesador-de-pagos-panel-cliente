@@ -657,8 +657,8 @@ function NetworkTokenInscription() {
         </EvervaultProvider>
 
         <p className="nt-security-note">
-          Para validar tu tarjeta haremos una reserva de $100 que no se cobra. Algunos bancos
-          pueden mostrar esa retención unas horas o días.
+          Validamos tu tarjeta sin cobrarte nada (autorización de $0). No verás un cargo en tu
+          cartola por esta verificación.
         </p>
         <p className="nt-security-note">
           El número de tu tarjeta viaja cifrado directo a una bóveda certificada PCI DSS. No lo
