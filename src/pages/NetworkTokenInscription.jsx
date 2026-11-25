@@ -88,6 +88,26 @@ function brandLabel(brand) {
   return value ? value.toUpperCase().slice(0, 6) : 'TARJETA'
 }
 
+/** Traduce errores técnicos de Evervault/TSP a copy para el cliente. */
+function clientFriendlyInscriptionError(message) {
+  const text = String(message || '')
+  const lower = text.toLowerCase()
+  if (
+    lower.includes('declined tokenization') ||
+    lower.includes('declined by the card issuer') ||
+    (lower.includes('tokenization') && lower.includes('declined'))
+  ) {
+    return 'Tu banco no autorizó inscribir esta tarjeta para pagos automáticos. Probá con otra tarjeta de crédito o débito (Visa o Mastercard).'
+  }
+  if (
+    lower.includes('unavailable token service provider') ||
+    lower.includes('token service provider is unavailable')
+  ) {
+    return 'No pudimos conectar con el servicio de tokenización en este momento. Esperá unos minutos e intentá de nuevo.'
+  }
+  return text
+}
+
 function BrandBadge({ brand }) {
   return <span className="nt-badge">{brandLabel(brand)}</span>
 }
@@ -287,7 +307,8 @@ function NetworkTokenInscription() {
           data?.validation?.status ||
           null
         const base = data.message || 'No se pudo inscribir el medio de pago'
-        throw new Error(detail ? `${base} (${detail})` : base)
+        const raw = detail ? `${base} (${detail})` : base
+        throw new Error(clientFriendlyInscriptionError(raw))
       }
       const result = data.object || {}
       if (role === 'backup') {
