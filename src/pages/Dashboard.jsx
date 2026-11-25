@@ -273,6 +273,7 @@ function Dashboard() {
             customer_token,
             evervault_app_id: options.evervault_app_id,
             evervault_team_id: options.evervault_team_id || null,
+            backup_card_enabled: options.backup_card_enabled === true,
           },
         })
         return

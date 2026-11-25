@@ -1,98 +1,307 @@
 .nt-inscription {
+  --nt-ink: #15171c;
+  --nt-text: #3a4150;
+  --nt-muted: #5e6573;
+  --nt-line: #e3e6eb;
+  --nt-field: #d5d9e0;
+  --nt-ground: #f3f4f6;
+  --nt-soft: #f7f8fa;
+  --nt-accent: #c9501a;
+  --nt-accent-dark: #8f3712;
+  --nt-accent-soft: #fdf1ea;
+  --nt-ok: #1e7a4c;
+  --nt-ok-soft: #e3f3ea;
+  --nt-error: #b3261e;
+  --nt-error-soft: #fbe9e7;
+
   min-height: 100vh;
-  background: #f3f4f6;
+  background: var(--nt-ground);
+  color: var(--nt-ink);
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
   padding: 28px 16px 48px;
   box-sizing: border-box;
 }
 
-.nt-inscription:has(.nt-inscription-form) > h1 {
+.nt-wrap {
   width: min(440px, 100%);
-  margin: 0;
-  background: #fff;
-  padding: 22px 20px 0;
-  border: 1px solid #e6e8ee;
-  border-bottom: 0;
-  border-radius: 18px 18px 0 0;
-  font-size: 1.35rem;
-  line-height: 1.25;
-  font-weight: 750;
-  color: #111;
-  box-sizing: border-box;
-}
-
-.nt-inscription:has(.nt-inscription-form) > .nt-inscription-note {
-  width: min(440px, 100%);
-  margin: 0;
-  background: #fff;
-  padding: 8px 20px 4px;
-  border-left: 1px solid #e6e8ee;
-  border-right: 1px solid #e6e8ee;
-  color: #667085;
-  font-size: 0.92rem;
-  line-height: 1.45;
-  box-sizing: border-box;
-}
-
-.nt-inscription-form {
-  width: min(440px, 100%);
-  margin: 0;
-  background: #fff;
-  padding: 14px 20px 20px;
-  border: 1px solid #e6e8ee;
-  border-top: 0;
-  border-radius: 0 0 18px 18px;
-  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.06);
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  box-sizing: border-box;
+  gap: 16px;
 }
 
-.nt-inscription-form label {
+/* ---------- Barra superior ---------- */
+
+.nt-topbar {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 0.82rem;
-  font-weight: 650;
-  color: #344054;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
 }
 
-.nt-inscription-form input {
-  width: 100%;
-  min-height: 48px;
-  border: 1px solid #d0d5dd;
+.nt-merchant {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.nt-merchant-logo,
+.nt-merchant-initials {
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
-  padding: 0 12px;
-  font-size: 16px;
+  flex: none;
+}
+
+.nt-merchant-logo {
+  object-fit: cover;
   background: #fff;
-  color: #111;
-  box-sizing: border-box;
+  border: 1px solid var(--nt-line);
 }
 
-.nt-inscription-form input:focus {
-  outline: none;
-  border-color: #ff6d2d;
-  box-shadow: 0 0 0 3px rgba(255, 109, 45, 0.2);
-}
-
-.nt-inscription-form button,
-.nt-inscription > button {
-  min-height: 48px;
-  border: 0;
-  border-radius: 12px;
-  background: #ff6d2d;
+.nt-merchant-initials {
+  background: var(--nt-ink);
   color: #fff;
-  font-weight: 700;
-  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.nt-merchant-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nt-merchant-text strong {
+  font-size: 15px;
+}
+
+.nt-merchant-text span {
+  font-size: 12px;
+  color: var(--nt-muted);
+}
+
+.nt-secure {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--nt-muted);
+  white-space: nowrap;
+}
+
+.nt-secure svg {
+  color: var(--nt-ok);
+}
+
+.nt-icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--nt-line);
+  background: #fff;
+  color: var(--nt-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
-.nt-inscription-form button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+/* ---------- Panel ---------- */
+
+.nt-panel {
+  background: #fff;
+  border: 1px solid var(--nt-line);
+  border-radius: 20px;
+  padding: 28px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.05);
+}
+
+.nt-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.nt-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nt-title {
+  margin: 0;
+  font-size: 1.6rem;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.nt-title-sm {
+  font-size: 1.45rem;
+}
+
+.nt-lead {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--nt-muted);
+}
+
+.nt-lead-sm {
+  font-size: 14px;
+}
+
+.nt-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--nt-text);
+}
+
+.nt-mono {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+
+.nt-muted-sm {
+  font-size: 12px;
+  color: var(--nt-muted);
+}
+
+.nt-eyebrow {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--nt-accent);
+}
+
+.nt-eyebrow-muted {
+  color: var(--nt-text);
+}
+
+/* ---------- Vista previa de tarjeta ---------- */
+
+.nt-preview {
+  position: relative;
+  overflow: hidden;
+  height: 176px;
+  border-radius: 16px;
+  background: #1c2230;
+  color: #fff;
+  padding: 20px 22px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.nt-preview-ring {
+  position: absolute;
+  right: -60px;
+  top: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 28px solid rgba(255, 255, 255, 0.05);
+}
+
+.nt-preview-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nt-preview-chip {
+  width: 38px;
+  height: 28px;
+  border-radius: 6px;
+  background: #d9b46a;
+}
+
+.nt-preview-brand {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #c3c9d4;
+}
+
+.nt-preview-number {
+  font-size: 20px;
+}
+
+.nt-preview-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.nt-preview-field span {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #c3c9d4;
+}
+
+.nt-preview-field strong {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Formulario ---------- */
+
+.nt-inscription-form {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.nt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nt-ink);
+}
+
+.nt-field input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--nt-field);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 16px;
+  font-family: inherit;
+  background: #fff;
+  color: var(--nt-ink);
+  box-sizing: border-box;
+}
+
+.nt-field input::placeholder {
+  color: #8a919d;
+}
+
+.nt-field input:focus {
+  outline: none;
+  border-color: var(--nt-accent);
+  box-shadow: 0 0 0 3px rgba(201, 80, 26, 0.18);
 }
 
 .nt-evervault-card,
@@ -101,50 +310,402 @@
   width: 100%;
 }
 
-.nt-inscription-error {
-  margin: 0;
-  background: #fdecea;
-  color: #b71c1c;
-  border-left: 4px solid #e53935;
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  font-size: 0.92rem;
-}
-
-.nt-inscription:not(:has(form)) {
-  justify-content: center;
-}
-
-.nt-inscription:not(:has(form)) > h1,
-.nt-inscription:not(:has(form)) > p,
-.nt-inscription:not(:has(form)) > button {
-  width: min(440px, 100%);
-  box-sizing: border-box;
-}
-
-.nt-inscription:not(:has(form)) > h1 {
-  background: #fff;
-  margin: 0;
-  padding: 22px 20px 0;
-  border: 1px solid #e6e8ee;
-  border-bottom: 0;
-  border-radius: 18px 18px 0 0;
-  font-size: 1.35rem;
-  line-height: 1.25;
-}
-
-.nt-inscription:not(:has(form)) > p {
-  background: #fff;
-  margin: 0;
-  padding: 8px 20px 16px;
-  border-left: 1px solid #e6e8ee;
-  border-right: 1px solid #e6e8ee;
-  color: #344054;
+.nt-check,
+.nt-consent {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 13px;
   line-height: 1.45;
+  color: var(--nt-text);
+  cursor: pointer;
 }
 
-.nt-inscription:not(:has(form)) > button {
-  border-radius: 0 0 18px 18px;
+.nt-consent {
+  background: var(--nt-soft);
+  border: 1px solid var(--nt-line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.nt-check input,
+.nt-consent input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--nt-accent);
+}
+
+/* ---------- Botones ---------- */
+
+.nt-btn-primary,
+.nt-btn-secondary,
+.nt-btn-link {
+  min-height: 52px;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.nt-btn-primary {
+  border: 0;
+  background: var(--nt-accent);
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.nt-btn-primary:hover:not(:disabled) {
+  background: #b5461a;
+}
+
+.nt-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nt-btn-secondary {
+  border: 1px solid var(--nt-field);
+  background: #fff;
+  color: var(--nt-ink);
+  font-weight: 600;
+}
+
+.nt-btn-link {
+  border: 0;
+  background: transparent;
+  color: var(--nt-text);
+  font-weight: 600;
+  min-height: 44px;
+}
+
+.nt-btn-primary:focus-visible,
+.nt-btn-secondary:focus-visible,
+.nt-btn-link:focus-visible,
+.nt-icon-btn:focus-visible {
+  outline: 3px solid rgba(201, 80, 26, 0.35);
+  outline-offset: 2px;
+}
+
+.nt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---------- Estados ---------- */
+
+.nt-status-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.nt-status-sm {
+  width: 56px;
+  height: 56px;
+}
+
+.nt-status-ok {
+  background: var(--nt-ok-soft);
+  color: var(--nt-ok);
+}
+
+.nt-status-error {
+  background: var(--nt-error-soft);
+  color: var(--nt-error);
+}
+
+.nt-success-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.nt-success-head > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nt-summary {
+  margin: 0;
+  border: 1px solid var(--nt-line);
+  border-radius: 14px;
+}
+
+.nt-summary > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+}
+
+.nt-summary > div + div {
+  border-top: 1px solid #eef0f3;
+}
+
+.nt-summary dt {
+  font-size: 14px;
+  color: var(--nt-muted);
+}
+
+.nt-summary dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-align: right;
+}
+
+.nt-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #eef0f4;
+  color: var(--nt-text);
+}
+
+.nt-pill {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.nt-pill-ok {
+  background: var(--nt-ok-soft);
+  color: #1e6b43;
+}
+
+.nt-pill-accent {
+  background: var(--nt-accent-soft);
+  color: var(--nt-accent-dark);
+}
+
+.nt-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nt-card-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--nt-line);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.nt-card-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+}
+
+.nt-card-row-new {
+  border: 1.5px dashed var(--nt-accent);
+  background: #fdf7f4;
+}
+
+.nt-card-row-new-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--nt-accent-dark);
+}
+
+.nt-accent-text {
+  color: var(--nt-accent);
+  display: inline-flex;
+}
+
+.nt-ok-text {
+  color: var(--nt-ok);
+  display: inline-flex;
+  flex: none;
+  margin-top: 1px;
+}
+
+/* ---------- Invitación a respaldo ---------- */
+
+.nt-invite {
+  border: 1.5px solid var(--nt-ink);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.nt-invite-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.nt-invite-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--nt-ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.nt-invite-title {
+  margin: 4px 0 0;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  font-weight: 800;
+  text-wrap: balance;
+}
+
+.nt-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nt-chips li {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 11px;
+  border-radius: 99px;
+  background: var(--nt-ground);
+  color: var(--nt-text);
+}
+
+.nt-check-line,
+.nt-tip {
+  margin: 0;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--nt-muted);
+}
+
+.nt-check-line strong,
+.nt-tip strong {
+  color: var(--nt-ink);
+}
+
+.nt-tip {
+  background: var(--nt-soft);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--nt-text);
+}
+
+.nt-tip svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.nt-hint {
+  font-size: 12px;
+  text-align: center;
+  color: var(--nt-muted);
+}
+
+/* ---------- Pasos y errores ---------- */
+
+.nt-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nt-steps ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  counter-reset: nt-step;
+}
+
+.nt-steps li {
+  counter-increment: nt-step;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--nt-text);
+}
+
+.nt-steps li::before {
+  content: counter(nt-step);
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #eef0f4;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nt-ink);
+}
+
+.nt-error-detail {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--nt-text);
+  background: #fdf6f5;
+  border: 1px solid #f1d3cf;
+  border-radius: 12px;
+  padding: 12px 14px;
+  overflow-wrap: anywhere;
+}
+
+.nt-error-detail span {
+  font-weight: 700;
+  color: var(--nt-error);
+}
+
+.nt-security-note,
+.nt-footnote {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--nt-muted);
+  text-align: center;
+}
+
+.nt-footnote strong {
+  color: var(--nt-ink);
 }
 
 @media (max-width: 480px) {
@@ -152,17 +713,15 @@
     padding: 16px 12px 32px;
   }
 
-  .nt-inscription:has(.nt-inscription-form) > h1,
-  .nt-inscription:not(:has(form)) > h1 {
-    font-size: 1.25rem;
-    padding: 18px 16px 0;
+  .nt-panel {
+    padding: 22px 16px 18px;
   }
 
-  .nt-inscription:has(.nt-inscription-form) > .nt-inscription-note,
-  .nt-inscription-form,
-  .nt-inscription:not(:has(form)) > p,
-  .nt-inscription:not(:has(form)) > button {
-    padding-left: 16px;
-    padding-right: 16px;
+  .nt-title {
+    font-size: 1.4rem;
+  }
+
+  .nt-secure {
+    font-size: 11px;
   }
 }
