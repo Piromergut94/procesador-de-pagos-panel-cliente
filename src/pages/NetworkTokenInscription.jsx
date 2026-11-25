@@ -105,6 +105,12 @@ function clientFriendlyInscriptionError(message) {
   ) {
     return 'No pudimos conectar con el servicio de tokenización en este momento. Esperá unos minutos e intentá de nuevo.'
   }
+  if (
+    lower.includes('network_tokens_evervault_token_id') ||
+    lower.includes('duplicate key')
+  ) {
+    return 'Esta tarjeta ya estaba registrada. Intentá de nuevo o usá otra tarjeta.'
+  }
   return text
 }
 
