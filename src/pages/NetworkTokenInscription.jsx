@@ -282,7 +282,12 @@ function NetworkTokenInscription() {
       )
       const data = await response.json().catch(() => ({}))
       if (!response.ok || data.status !== 'success') {
-        throw new Error(data.message || 'No se pudo inscribir el medio de pago')
+        const detail =
+          data?.validation?.status_detail ||
+          data?.validation?.status ||
+          null
+        const base = data.message || 'No se pudo inscribir el medio de pago'
+        throw new Error(detail ? `${base} (${detail})` : base)
       }
       const result = data.object || {}
       if (role === 'backup') {
